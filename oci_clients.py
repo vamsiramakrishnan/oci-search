@@ -6,6 +6,12 @@ import asyncio
 
 async def clients_init(config, region_name):
     pprint.pprint("Initializing Resource Specific Clients & Regions ")
+    
+    #identity client
+    pprint.pprint("Initialize Identity Client in Region : {}".format(region_name))
+    identity_client = oci.identity.IdentityClient(config)
+    identity_client.base_client.set_region(region_name)
+    
 
     # search client
     pprint.pprint("Initialize Search Client in Region : {}".format(region_name))
@@ -100,6 +106,7 @@ async def clients_init(config, region_name):
         "Vcn": vcn_client,
         "Subnet": vcn_client,
         "Instance": compute_client,
+        "Image": compute_client,
         "AutonomousDatabase": db_client,
         "DbSystem": db_client,
         "AnalyticsInstance": analytics_client,
@@ -130,4 +137,12 @@ async def clients_init(config, region_name):
         "ApiGateway": api_gw_client,
         "ApiDeployment": api_gw_deployment_client,
         "FileSystem": filestorage_client,
+        "Compartment":identity_client,
+        "Group": identity_client,
+        "IdentityProvider": identity_client,
+        "IdpGroupMapping": identity_client,
+        "Policy": identity_client,
+        "TagDefault": identity_client,
+        "TagNamespace": identity_client,
+        "User": identity_client
     }
