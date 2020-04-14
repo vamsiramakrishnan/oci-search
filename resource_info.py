@@ -2,7 +2,6 @@ import oci
 import json
 from operator import itemgetter
 
-
 def convert_response_to_dict(oci_response):
     return oci.util.to_dict(oci_response.data)
 
@@ -55,10 +54,21 @@ def extract_compute(searchResult, computeShapeLookupTable, compute_client):
     compute_dict = convert_response_to_dict(
         compute_client.get_instance(searchResult["identifier"])
     )
+    vnic_dict = convert_response_to_dict(compute_client.list_vnic_attachments(compartment_id = searchResult['compartment_id'], availability_domain = searchResult['availability_domain'], instance_id = searchResult["identifier"]))
+    volume_dict = convert_response_to_dict(compute_client.list_volume_attachments(compartment_id = searchResult['compartment_id'], availability_domain = searchResult['availability_domain'], instance_id = searchResult["identifier"]))
+    boot_volume_dict = convert_response_to_dict(compute_client.list_boot_volume_attachments(compartment_id = searchResult['compartment_id'], availability_domain = searchResult['availability_domain'], instance_id = searchResult["identifier"]))
+    compute_dict.update({"vnic_attachments": vnic_dict})
+    compute_dict.update({"volume_attachments": volume_dict})
+    compute_dict.update({"boot_volume_attachments": boot_volume_dict})
     searchResult["shape"] = compute_dict["shape"]
     searchResult["OCPU_Qty"] = computeShapeLookupTable[compute_dict["shape"]]
     return searchResult, compute_dict
 
+def extract_image(searchResult, computeShapeLookupTable, compute_client):
+    image_dict = convert_response_to_dict(
+        compute_client.get_image(searchResult["identifier"])
+    )
+    return image_dict
 
 def extract_analytics(searchResult, computeShapeLookupTable, analytics_client):
     analytics_dict = convert_response_to_dict(
@@ -115,12 +125,43 @@ def extract_routetable(searchResult, computeShapeLookupTable, vcn_client):
     )
     return rt_dict
 
-def extract_routetable(searchResult, computeShapeLookupTable, vcn_client):
-    rt_dict = convert_response_to_dict(
-        vcn_client.get_route_table(searchResult["identifier"])
-    )
-    return rt_dict
+def extract_user(searchResult, computeShapeLookupTable, identity_client):
+    user_dict = convert_response_to_dict(
+        identity_client.get_user(searchResult["identifier"]))
+    memberships_dict =  convert_response_to_dict(identity_client.list_user_group_memberships(searchResult['compartment_id'], user_id = searchResult["identifier"]))
+    user_dict.update({"group_memberships": memberships_dict})
+    return user_dict
 
+def extract_compartment(searchResult, computeShapeLookupTable, identity_client):
+    compartment_dict = convert_response_to_dict(
+        identity_client.get_compartment(searchResult["identifier"])
+    )
+    return compartment_dict
+
+def extract_group(searchResult, computeShapeLookupTable, identity_client):
+    group_dict = convert_response_to_dict(
+        identity_client.get_group(searchResult["identifier"])
+    )
+    return group_dict
+
+def extract_tagdefault(searchResult, computeShapeLookupTable, identity_client):
+    td_dict = convert_response_to_dict(
+        identity_client.get_tag_default(searchResult["identifier"])
+    )
+    return td_dict
+
+def extract_policy(searchResult, computeShapeLookupTable, identity_client):
+    policy_dict = convert_response_to_dict(
+        identity_client.get_policy(searchResult["identifier"])
+    )
+    return policy_dict
+
+
+def extract_tagnamespace(searchResult, computeShapeLookupTable, identity_client):
+    tagnamespace_dict = convert_response_to_dict(
+        identity_client.get_tag_namespace(searchResult["identifier"])
+    )
+    return tagnamespace_dict
 
 def extract_bucket(searchResult, computeShapeLookupTable, objectstorage_client):
     namespace = convert_response_to_dict(objectstorage_client.get_namespace())
@@ -162,6 +203,24 @@ def extract_filestorage(searchResult, computeShapeLookupTable, filestorage_clien
         filestorage_client.get_file_system(searchResult["identifier"])
     )
     return filestorage_dict
+
+def extract_datascience_project(searchResult, computeShapeLookupTable, datascience_client):
+    datascience_dict = convert_response_to_dict(
+        datascience_client.get_project(searchResult["identifier"])
+    )
+    return datascience_dict
+
+def extract_datascience_notebook_session(searchResult, computeShapeLookupTable, datascience_client):
+    datascience_dict = convert_response_to_dict(
+        datascience_client.get_notebook_session(searchResult["identifier"])
+    )
+    return datascience_dict
+
+def extract_datascience_model(searchResult, computeShapeLookupTable, datascience_client):
+    datascience_dict = convert_response_to_dict(
+        datascience_client.get_model(searchResult["identifier"])
+    )
+    return datascience_dict    
 
 def get_resource_specific_info( searchResult, computeShapeLookupTable, client):
     searchResult["license_model"] = "N/A"
@@ -217,16 +276,44 @@ def get_resource_specific_info( searchResult, computeShapeLookupTable, client):
         
     elif searchResult["resource_type"] == "BootVolumeBackup":
         res_dict = extract_bootvolume_backup(searchResult, computeShapeLookupTable, client)
+
+    elif searchResult["resource_type"] == "VolumeBackup":
+        res_dict = extract_volume_backup(searchResult, computeShapeLookupTable, client)
         
     elif searchResult["resource_type"] == "FileStorage":
         res_dict = extract_filestorage(searchResult, computeShapeLookupTable, client)
         
-    elif searchResult["resource_type"] == "VolumeBackup":
-        res_dict = extract_volume_backup(searchResult, computeShapeLookupTable, client)
+    elif searchResult["resource_type"] == "Compartment":
+        res_dict = extract_compartment(searchResult, computeShapeLookupTable, client)
+    
+    elif searchResult["resource_type"] == "User":
+        res_dict = extract_user(searchResult, computeShapeLookupTable, client)
+
+    elif searchResult["resource_type"] == "Group":
+        res_dict = extract_group(searchResult, computeShapeLookupTable, client)
+
+    elif searchResult["resource_type"] == "TagNamespace":
+        res_dict = extract_tagnamespace(searchResult, computeShapeLookupTable, client)
+
+    elif searchResult["resource_type"] == "TagDefault":
+        res_dict = extract_tagdefault(searchResult, computeShapeLookupTable, client)
+
+    elif searchResult["resource_type"] == "Policy":
+        res_dict = extract_policy(searchResult, computeShapeLookupTable, client)
+        
+    elif searchResult["resource_type"] == "DataScienceProject":
+        res_dict = extract_datascience_project(searchResult, computeShapeLookupTable, client)
+
+    elif searchResult["resource_type"] == "DataScienceNotebookSession":
+        res_dict = extract_datascience_notebook_session(searchResult, computeShapeLookupTable, client)
+
+    elif searchResult["resource_type"]== "DataScienceModel":
+        res_dict = extract_datascience_model(searchResult, computeShapeLookupTable, client)
+        
+    elif searchResult["resource_type"]=="Image":
+        res_dict = extract_image(searchResult, computeShapeLookupTable, client)
     
     return searchResult, res_dict
-
-
 
 def get_resource_info_from_search(
     searchResult,
@@ -240,7 +327,7 @@ def get_resource_info_from_search(
     parent_compartment_name = (
         compartment_kv[compartment_parent_ocid_kv[searchResult["compartment_id"]]]
         if searchResult["compartment_id"] != tenancy_id
-        else "None"
+        else "ROOT"
     )
     chosen_client = clients[searchResult["resource_type"]]
     try:
