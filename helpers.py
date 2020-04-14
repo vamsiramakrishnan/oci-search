@@ -9,6 +9,7 @@ import time
 import logging
 import concurrent.futures as cf
 
+
 def list_region_subscriptions(config):
     pprint.pprint("Fetching all regions in tenancy")
     identity_client = oci.identity.IdentityClient(config)
