@@ -14,7 +14,7 @@ click==7.1.1
 clikit==0.4.3
 colorlover==0.3.0
 configparser==4.0.2
-cryptography==2.8
+cryptography==3.2
 cycler==0.10.0
 decorator==4.4.1
 defusedxml==0.6.0
