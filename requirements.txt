@@ -78,7 +78,7 @@ ply==3.11
 poetry==1.0.5
 prompt-toolkit==3.0.2
 ptyprocess==0.6.0
-py==1.8.1
+py==1.10.0
 pycodestyle==2.5.0
 pycodestyle-magic==0.5
 pycparser==2.20
